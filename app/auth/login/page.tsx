@@ -1,0 +1,130 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
+import { Eye, EyeOff, LogIn } from 'lucide-react'
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const { signIn } = useAuth()
+  const router = useRouter()
+
+  async function handleSubmit() {
+    if (!email || !password) { setError('Please fill in all fields'); return }
+    setLoading(true); setError('')
+    const { error } = await signIn(email, password)
+    if (error) {
+      setError('Invalid email or password')
+      setLoading(false)
+    } else {
+      router.push('/dashboard/main')
+    }
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#050810', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem' }}>
+            <span className="gold-text">BIG</span>
+            <span style={{ color: '#e8eaf0' }}> EARN</span>
+          </div>
+        </Link>
+      </div>
+
+      {/* Glow */}
+      <div style={{
+        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+        width: 400, height: 400,
+        background: 'radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)',
+        pointerEvents: 'none'
+      }} />
+
+      {/* Form */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px 40px' }}>
+        <div style={{ width: '100%', maxWidth: 400 }}>
+          <div className="card" style={{ padding: '32px 24px' }}>
+            <div style={{ marginBottom: 28, textAlign: 'center' }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: '50%',
+                background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}>
+                <LogIn size={24} color="#f5c842" />
+              </div>
+              <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: '#e8eaf0' }}>WELCOME BACK</h1>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: 8 }}>Sign in to your BIG EARN account</p>
+            </div>
+
+            {error && (
+              <div style={{
+                background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
+                borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+                color: '#f87171', fontSize: '0.85rem', textAlign: 'center'
+              }}>{error}</div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: 8, display: 'block' }}>EMAIL ADDRESS</label>
+                <input
+                  className="input-field"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginBottom: 8, display: 'block' }}>PASSWORD</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    className="input-field"
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                    style={{ paddingRight: 48 }}
+                  />
+                  <button
+                    onClick={() => setShowPass(!showPass)}
+                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}
+                  >
+                    {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                className="btn-gold"
+                onClick={handleSubmit}
+                disabled={loading}
+                style={{ width: '100%', marginTop: 8, opacity: loading ? 0.7 : 1 }}
+              >
+                {loading ? 'SIGNING IN...' : 'SIGN IN'}
+              </button>
+            </div>
+
+            <p style={{ textAlign: 'center', marginTop: 20, fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)' }}>
+              Don&apos;t have an account?{' '}
+              <Link href="/auth/signup" style={{ color: '#f5c842', textDecoration: 'none', fontWeight: 500 }}>
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
