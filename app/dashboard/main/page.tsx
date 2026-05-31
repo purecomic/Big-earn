@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { supabase, Transaction, Investment } from '@/lib/supabase'
 import { TrendingUp, ArrowDownCircle, ArrowUpCircle, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react'
@@ -11,25 +11,48 @@ export default function DashboardMain() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [investments, setInvestments] = useState<Investment[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const fetchData = useCallback(async () => {
+    if (!user?.id) return
+    setLoading(true)
+    setError('')
+
+    try {
+      const [txRes, invRes] = await Promise.all([
+        supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('investments')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false }),
+      ])
+
+      if (txRes.error) throw txRes.error
+      if (invRes.error) throw invRes.error
+
+      setTransactions((txRes.data as Transaction[]) ?? [])
+      setInvestments((invRes.data as Investment[]) ?? [])
+      await refreshUser()
+    } catch (err: any) {
+      setError('Failed to load data. Pull down to retry.')
+      console.error('Dashboard fetch error:', err?.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [user?.id])
 
   useEffect(() => {
-    if (user) fetchData()
-  }, [user])
+    if (user?.id) fetchData()
+  }, [user?.id])
 
-  async function fetchData() {
-    if (!user) return
-    setLoading(true)
-    const [txRes, invRes] = await Promise.all([
-      supabase.from('transactions').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
-      supabase.from('investments').select('*').eq('user_id', user.id).eq('status', 'active').order('created_at', { ascending: false }),
-    ])
-    if (txRes.data) setTransactions(txRes.data as Transaction[])
-    if (invRes.data) setInvestments(invRes.data as Investment[])
-    await refreshUser()
-    setLoading(false)
-  }
-
-  const activeInvestmentTotal = investments.reduce((s, i) => s + i.amount, 0)
+  const activeInvestmentTotal = investments.reduce((s, i) => s + (i.amount ?? 0), 0)
 
   function statusIcon(status: string) {
     if (status === 'approved') return <CheckCircle size={14} color="#4ade80" />
@@ -38,12 +61,22 @@ export default function DashboardMain() {
   }
 
   function txColor(type: string) {
-    if (type === 'deposit' || type === 'return') return '#4ade80'
-    return '#f87171'
+    return type === 'deposit' || type === 'return' ? '#4ade80' : '#f87171'
   }
 
   function txSign(type: string) {
     return type === 'deposit' || type === 'return' ? '+' : '-'
+  }
+
+  // Show loading spinner only on first load
+  if (loading && transactions.length === 0) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 12 }}>
+        <div style={{ width: 40, height: 40, border: '3px solid rgba(245,200,66,0.2)', borderTop: '3px solid #f5c842', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Loading your dashboard...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
   }
 
   return (
@@ -52,9 +85,19 @@ export default function DashboardMain() {
       <div style={{ marginBottom: 24 }}>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.85rem' }}>Welcome back,</p>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: '#e8eaf0', letterSpacing: '0.05em' }}>
-          {user?.full_name?.split(' ')[0].toUpperCase()} 👋
+          {user?.full_name?.split(' ')[0]?.toUpperCase() ?? 'USER'} 👋
         </h1>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 16, color: '#f87171', fontSize: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {error}
+          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer' }}>
+            <RefreshCw size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Balance Card */}
       <div style={{
@@ -124,12 +167,12 @@ export default function DashboardMain() {
                       <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{daysLeft} days remaining</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: '#4ade80', fontWeight: 600 }}>${inv.amount.toLocaleString()}</div>
+                      <div style={{ color: '#4ade80', fontWeight: 600 }}>${(inv.amount ?? 0).toLocaleString()}</div>
                       <div style={{ fontSize: '0.75rem', color: '#f5c842' }}>+{inv.roi_percent}% ROI</div>
                     </div>
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #f5c842, #4ade80)', borderRadius: 4, transition: 'width 0.5s' }} />
+                    <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg, #f5c842, #4ade80)', borderRadius: 4 }} />
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: 4, textAlign: 'right' }}>{progress.toFixed(0)}% complete</div>
                 </div>
@@ -143,14 +186,12 @@ export default function DashboardMain() {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: '#e8eaf0' }}>RECENT TRANSACTIONS</h2>
-          <button onClick={fetchData} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
-            <RefreshCw size={16} />
+          <button onClick={fetchData} disabled={loading} style={{ background: 'none', border: 'none', color: loading ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.4)', cursor: loading ? 'default' : 'pointer' }}>
+            <RefreshCw size={16} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
           </button>
         </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '30px', color: 'rgba(255,255,255,0.3)' }}>Loading...</div>
-        ) : transactions.length === 0 ? (
+        {transactions.length === 0 ? (
           <div className="card" style={{ padding: '30px', textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', marginBottom: 8 }}>💰</div>
             <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>No transactions yet</p>
@@ -180,7 +221,7 @@ export default function DashboardMain() {
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ color: txColor(tx.type), fontWeight: 600 }}>{txSign(tx.type)}${tx.amount.toLocaleString()}</div>
+                  <div style={{ color: txColor(tx.type), fontWeight: 600 }}>{txSign(tx.type)}${(tx.amount ?? 0).toLocaleString()}</div>
                   <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>{new Date(tx.created_at).toLocaleDateString()}</div>
                 </div>
               </div>
@@ -188,6 +229,9 @@ export default function DashboardMain() {
           </div>
         )}
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }
+
