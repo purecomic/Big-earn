@@ -18,18 +18,23 @@ export default function LoginPage() {
   async function handleSubmit() {
     if (!email || !password) { setError('Please fill in all fields'); return }
     setLoading(true); setError('')
+
     const { error } = await signIn(email, password)
+
     if (error) {
-      setError('Invalid email or password')
+      setError(error)
       setLoading(false)
-    } else {
-      router.push('/dashboard/main')
+      return
     }
+
+    // Small delay to let auth state settle, then redirect
+    setTimeout(() => {
+      router.push('/dashboard/main')
+    }, 300)
   }
 
   return (
     <div style={{ minHeight: '100vh', background: '#050810', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
       <div style={{ padding: '24px', textAlign: 'center' }}>
         <Link href="/" style={{ textDecoration: 'none' }}>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem' }}>
@@ -39,25 +44,13 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      {/* Glow */}
-      <div style={{
-        position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
-        width: 400, height: 400,
-        background: 'radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)',
-        pointerEvents: 'none'
-      }} />
+      <div style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', width: 400, height: 400, background: 'radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
-      {/* Form */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px 40px' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
           <div className="card" style={{ padding: '32px 24px' }}>
             <div style={{ marginBottom: 28, textAlign: 'center' }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: '50%',
-                background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                margin: '0 auto 16px'
-              }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(245,200,66,0.1)', border: '1px solid rgba(245,200,66,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <LogIn size={24} color="#f5c842" />
               </div>
               <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: '#e8eaf0' }}>WELCOME BACK</h1>
@@ -65,11 +58,9 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div style={{
-                background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)',
-                borderRadius: 10, padding: '12px 16px', marginBottom: 20,
-                color: '#f87171', fontSize: '0.85rem', textAlign: 'center'
-              }}>{error}</div>
+              <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, color: '#f87171', fontSize: '0.85rem', textAlign: 'center' }}>
+                {error}
+              </div>
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -82,6 +73,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                  autoComplete="email"
                 />
               </div>
 
@@ -96,6 +88,7 @@ export default function LoginPage() {
                     onChange={e => setPassword(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                     style={{ paddingRight: 48 }}
+                    autoComplete="current-password"
                   />
                   <button
                     onClick={() => setShowPass(!showPass)}
