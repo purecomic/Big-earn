@@ -1,3 +1,9 @@
+#!/bin/bash
+cd ~/bigearn-app/bigearn
+mkdir -p app/dashboard/admin app/dashboard/deposit app/dashboard/invest
+
+# Write admin page
+cat > app/dashboard/admin/page.tsx << 'EOF'
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -315,3 +321,255 @@ export default function AdminPage() {
     </div>
   )
 }
+EOF
+
+echo "✅ Admin page written"
+
+# Write deposit page
+cat > app/dashboard/deposit/page.tsx << 'EOF'
+'use client'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase'
+import { ArrowDownCircle, Copy, CheckCircle, Upload, Info } from 'lucide-react'
+type Wallet = { name: string; address: string; symbol: string; color: string }
+export default function DepositPage() {
+  const { user, refreshUser } = useAuth()
+  const [wallets, setWallets] = useState<Wallet[]>([
+    { name: 'Bitcoin (BTC)', address: '', symbol: '₿', color: '#f7931a' },
+    { name: 'USDT (TRC20)', address: '', symbol: '₮', color: '#26a17b' },
+    { name: 'Ethereum (ETH)', address: '', symbol: 'Ξ', color: '#627eea' },
+  ])
+  const [amount, setAmount] = useState('')
+  const [selectedWallet, setSelectedWallet] = useState(0)
+  const [copied, setCopied] = useState(false)
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [txHash, setTxHash] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => {
+    supabase.from('site_settings').select('*').in('key', ['wallet_btc','wallet_usdt','wallet_eth']).then(({ data }) => {
+      if (!data) return
+      const map: any = {}
+      data.forEach((r: any) => { map[r.key] = r.value })
+      setWallets([
+        { name: 'Bitcoin (BTC)', address: map['wallet_btc']??'', symbol: '₿', color: '#f7931a' },
+        { name: 'USDT (TRC20)', address: map['wallet_usdt']??'', symbol: '₮', color: '#26a17b' },
+        { name: 'Ethereum (ETH)', address: map['wallet_eth']??'', symbol: 'Ξ', color: '#627eea' },
+      ])
+    })
+  }, [])
+  function copyAddress() { navigator.clipboard.writeText(wallets[selectedWallet].address); setCopied(true); setTimeout(() => setCopied(false), 2000) }
+  async function handleSubmit() {
+    if (!amount || parseFloat(amount) < 10) { setError('Minimum deposit is $10'); return }
+    if (!user) return
+    setSubmitting(true); setError('')
+    let proofUrl = ''
+    if (proofFile) {
+      const ext = proofFile.name.split('.').pop()
+      const filename = `${user.id}/${Date.now()}.${ext}`
+      const { data } = await supabase.storage.from('proofs').upload(filename, proofFile)
+      if (data) { const { data: urlData } = supabase.storage.from('proofs').getPublicUrl(filename); proofUrl = urlData.publicUrl }
+    }
+    const { error: txError } = await supabase.from('transactions').insert({ user_id: user.id, type: 'deposit', amount: parseFloat(amount), status: 'pending', description: `Deposit via ${wallets[selectedWallet].name}${txHash ? ` | TX: ${txHash}` : ''}`, proof_url: proofUrl || null })
+    if (txError) { setError('Failed to submit. Please try again.'); setSubmitting(false); return }
+    await supabase.from('notifications').insert({ user_id: null, title: '💰 New Deposit Request', message: `${user.full_name} requested a deposit of $${amount}`, type: 'info', is_broadcast: false })
+    await refreshUser(); setSuccess(true); setSubmitting(false)
+  }
+  if (success) return (
+    <div style={{ padding: '40px 24px', textAlign: 'center', maxWidth: 400, margin: '0 auto' }}>
+      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}><CheckCircle size={36} color="#4ade80" /></div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: '#4ade80', marginBottom: 10 }}>DEPOSIT SUBMITTED!</h2>
+      <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, marginBottom: 24 }}>Your deposit of <strong style={{ color: '#f5c842' }}>${amount}</strong> is under review. Balance updates within 24 hours.</p>
+      <button className="btn-gold" onClick={() => { setSuccess(false); setAmount(''); setTxHash(''); setProofFile(null) }}>MAKE ANOTHER DEPOSIT</button>
+    </div>
+  )
+  return (
+    <div style={{ padding: '20px 16px', maxWidth: 500, margin: '0 auto' }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}><ArrowDownCircle size={22} color="#4ade80" /><h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: '#e8eaf0' }}>DEPOSIT FUNDS</h1></div>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Send crypto to add funds to your account</p>
+      </div>
+      <div style={{ background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', gap: 10 }}>
+        <Info size={16} color="#60a5fa" style={{ flexShrink: 0, marginTop: 2 }} />
+        <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>Send crypto below, then submit the form. Admin verifies and credits your account within 24 hours.</p>
+      </div>
+      <div className="card" style={{ padding: '20px', marginBottom: 16 }}>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'rgba(255,255,255,0.5)', marginBottom: 14, letterSpacing: '0.08em' }}>STEP 1 — SELECT NETWORK</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {wallets.map((w, i) => (
+            <button key={i} onClick={() => setSelectedWallet(i)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px', background: selectedWallet===i?`${w.color}15`:'rgba(255,255,255,0.03)', border: `1px solid ${selectedWallet===i?w.color+'60':'rgba(255,255,255,0.08)'}`, borderRadius: 12, cursor: 'pointer' }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${w.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 700, color: w.color }}>{w.symbol}</div>
+              <span style={{ color: selectedWallet===i?'#e8eaf0':'rgba(255,255,255,0.6)', fontWeight: 500, fontSize: '0.9rem' }}>{w.name}</span>
+              {selectedWallet===i && <CheckCircle size={16} color={w.color} style={{ marginLeft: 'auto' }} />}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="card" style={{ padding: '20px', marginBottom: 16 }}>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'rgba(255,255,255,0.5)', marginBottom: 14, letterSpacing: '0.08em' }}>STEP 2 — SEND TO ADDRESS</h3>
+        {wallets[selectedWallet].address ? <>
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 10, padding: '14px 16px', wordBreak: 'break-all', fontSize: '0.85rem', color: '#f5c842', lineHeight: 1.6, marginBottom: 12 }}>{wallets[selectedWallet].address}</div>
+          <button onClick={copyAddress} className="btn-ghost" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px' }}>
+            {copied ? <><CheckCircle size={16} color="#4ade80" /><span style={{ color: '#4ade80' }}>COPIED!</span></> : <><Copy size={16} />COPY ADDRESS</>}
+          </button>
+        </> : <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>Wallet address not set yet. Contact admin.</div>}
+      </div>
+      <div className="card" style={{ padding: '20px', marginBottom: 20 }}>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'rgba(255,255,255,0.5)', marginBottom: 14, letterSpacing: '0.08em' }}>STEP 3 — CONFIRM PAYMENT</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginBottom: 8, display: 'block' }}>AMOUNT (USD)</label>
+            <input className="input-field" type="number" placeholder="e.g. 100" value={amount} onChange={e => setAmount(e.target.value)} min="10" />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginBottom: 8, display: 'block' }}>TRANSACTION HASH (optional)</label>
+            <input className="input-field" type="text" placeholder="Paste TX hash here" value={txHash} onChange={e => setTxHash(e.target.value)} />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginBottom: 8, display: 'block' }}>PAYMENT SCREENSHOT (optional)</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px', background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(245,200,66,0.25)', borderRadius: 10, cursor: 'pointer' }}>
+              <Upload size={18} color="rgba(255,255,255,0.4)" />
+              <span style={{ fontSize: '0.85rem', color: proofFile?'#f5c842':'rgba(255,255,255,0.35)' }}>{proofFile ? proofFile.name : 'Tap to upload proof'}</span>
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => setProofFile(e.target.files?.[0] || null)} />
+            </label>
+          </div>
+        </div>
+        {error && <div style={{ color: '#f87171', fontSize: '0.82rem', marginTop: 12, padding: '10px', background: 'rgba(248,113,113,0.1)', borderRadius: 8 }}>{error}</div>}
+        <button className="btn-gold" onClick={handleSubmit} disabled={submitting} style={{ width: '100%', marginTop: 20, opacity: submitting?0.7:1 }}>{submitting ? 'SUBMITTING...' : 'SUBMIT DEPOSIT'}</button>
+      </div>
+    </div>
+  )
+}
+EOF
+
+echo "✅ Deposit page written"
+
+# Write invest page
+cat > app/dashboard/invest/page.tsx << 'EOF'
+'use client'
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/lib/auth-context'
+import { supabase } from '@/lib/supabase'
+import { TrendingUp, CheckCircle, Zap, Clock, Shield } from 'lucide-react'
+type Plan = { id: string; name: string; roi: number; duration: number; min: number; max: number; color: string; icon: string; popular?: boolean }
+const PLAN_META: any = { plan_starter: { color: '#4ade80', icon: '🌱' }, plan_growth: { color: '#f5c842', icon: '📈', popular: true }, plan_elite: { color: '#f87171', icon: '👑' }, plan_vip: { color: '#c084fc', icon: '💎' } }
+export default function InvestPage() {
+  const { user, refreshUser } = useAuth()
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
+  const [amount, setAmount] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+  const balance = user?.balance ?? 0
+  useEffect(() => {
+    supabase.from('site_settings').select('*').in('key', ['plan_starter','plan_growth','plan_elite','plan_vip']).then(({ data }) => {
+      if (!data) return
+      const loaded: Plan[] = []
+      for (const key of ['plan_starter','plan_growth','plan_elite','plan_vip']) {
+        const row = data.find((r: any) => r.key === key)
+        if (row) { try { loaded.push({ id: key, ...JSON.parse(row.value), ...PLAN_META[key] }) } catch {} }
+      }
+      if (loaded.length > 0) setPlans(loaded)
+    })
+  }, [])
+  function calcReturn(amt: number, roi: number) { return (amt * roi / 100) + amt }
+  async function handleInvest() {
+    if (!selectedPlan) { setError('Select a plan'); return }
+    const amt = parseFloat(amount)
+    if (!amount || isNaN(amt)) { setError('Enter a valid amount'); return }
+    if (amt < selectedPlan.min) { setError(`Minimum for this plan is $${selectedPlan.min}`); return }
+    if (amt > selectedPlan.max) { setError(`Maximum for this plan is $${selectedPlan.max.toLocaleString()}`); return }
+    if (amt > balance) { setError('Insufficient balance'); return }
+    if (!user) return
+    setSubmitting(true); setError('')
+    const startDate = new Date(); const endDate = new Date(startDate); endDate.setDate(endDate.getDate() + selectedPlan.duration)
+    const { error: invError } = await supabase.from('investments').insert({ user_id: user.id, plan_name: selectedPlan.name, amount: amt, roi_percent: selectedPlan.roi, duration_days: selectedPlan.duration, status: 'active', start_date: startDate.toISOString(), end_date: endDate.toISOString(), returns_earned: 0 })
+    if (invError) { setError('Failed to invest. Please try again.'); setSubmitting(false); return }
+    await supabase.from('profiles').update({ balance: balance - amt, total_invested: (user.total_invested??0) + amt }).eq('id', user.id)
+    await supabase.from('transactions').insert({ user_id: user.id, type: 'investment', amount: amt, status: 'approved', description: `${selectedPlan.name} plan investment` })
+    await refreshUser(); setSuccess(true); setSubmitting(false)
+  }
+  if (success) return (
+    <div style={{ padding: '40px 24px', textAlign: 'center', maxWidth: 400, margin: '0 auto' }}>
+      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}><CheckCircle size={36} color="#4ade80" /></div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: '#4ade80', marginBottom: 10 }}>INVESTMENT ACTIVE!</h2>
+      <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, marginBottom: 8 }}>Your <strong style={{ color: '#f5c842' }}>${amount}</strong> is now in the <strong style={{ color: '#f5c842' }}>{selectedPlan?.name}</strong> plan.</p>
+      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginBottom: 24 }}>Expected return: <strong style={{ color: '#4ade80' }}>${calcReturn(parseFloat(amount), selectedPlan?.roi??0).toFixed(2)}</strong> in {selectedPlan?.duration} days</p>
+      <button className="btn-gold" onClick={() => { setSuccess(false); setAmount(''); setSelectedPlan(null) }}>INVEST MORE</button>
+    </div>
+  )
+  return (
+    <div style={{ padding: '20px 16px', maxWidth: 500, margin: '0 auto' }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}><TrendingUp size={22} color="#f5c842" /><h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: '#e8eaf0' }}>INVEST NOW</h1></div>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Choose a plan and grow your crypto</p>
+      </div>
+      <div style={{ background: 'rgba(245,200,66,0.07)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 12, padding: '16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em' }}>AVAILABLE</p>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: '#f5c842' }}>${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 16 }}>
+          {[{ icon: <Zap size={14} color="#f5c842" />, text: 'Instant' }, { icon: <Shield size={14} color="#4ade80" />, text: 'Secured' }, { icon: <Clock size={14} color="#60a5fa" />, text: '24/7' }].map((f, i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>{f.icon}<span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.35)' }}>{f.text}</span></div>
+          ))}
+        </div>
+      </div>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'rgba(255,255,255,0.5)', marginBottom: 14, letterSpacing: '0.08em' }}>SELECT INVESTMENT PLAN</h3>
+      {plans.length === 0 ? <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.3)' }}>Loading plans...</div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          {plans.map(plan => (
+            <button key={plan.id} onClick={() => { setSelectedPlan(plan); setAmount(String(plan.min)) }} style={{ width: '100%', textAlign: 'left', padding: '18px', borderRadius: 14, cursor: 'pointer', background: selectedPlan?.id===plan.id?`${plan.color}12`:'rgba(10,15,30,0.8)', border: `1px solid ${selectedPlan?.id===plan.id?plan.color+'60':'rgba(255,255,255,0.08)'}`, position: 'relative', overflow: 'hidden' }}>
+              {plan.popular && <div style={{ position: 'absolute', top: 10, right: 10, background: '#f5c842', color: '#050810', fontSize: '0.65rem', fontFamily: 'var(--font-display)', padding: '3px 10px', borderRadius: 100 }}>POPULAR</div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span style={{ fontSize: '1.5rem' }}>{plan.icon}</span>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: plan.color }}>{plan.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>${plan.min.toLocaleString()} – ${plan.max.toLocaleString()}</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: plan.color, lineHeight: 1 }}>{plan.roi}%</div>
+                  <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>in {plan.duration} days</div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+      {selectedPlan && (
+        <div className="card" style={{ padding: '20px', marginBottom: 20 }}>
+          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: 'rgba(255,255,255,0.5)', marginBottom: 16, letterSpacing: '0.08em' }}>INVEST IN {selectedPlan.name}</h3>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', marginBottom: 8, display: 'block' }}>AMOUNT (USD)</label>
+            <div style={{ position: 'relative' }}>
+              <input className="input-field" type="number" placeholder={`Min $${selectedPlan.min}`} value={amount} onChange={e => setAmount(e.target.value)} style={{ paddingRight: 80 }} />
+              <button onClick={() => setAmount(Math.min(balance, selectedPlan.max).toFixed(2))} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'rgba(245,200,66,0.15)', border: '1px solid rgba(245,200,66,0.3)', color: '#f5c842', padding: '4px 10px', borderRadius: 6, cursor: 'pointer', fontSize: '0.75rem' }}>MAX</button>
+            </div>
+          </div>
+          {amount && parseFloat(amount) >= selectedPlan.min && (
+            <div style={{ background: `${selectedPlan.color}10`, border: `1px solid ${selectedPlan.color}30`, borderRadius: 10, padding: '14px', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Investment</span><span style={{ fontSize: '0.9rem', color: '#e8eaf0', fontWeight: 600 }}>${parseFloat(amount).toLocaleString()}</span></div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}><span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>ROI ({selectedPlan.roi}%)</span><span style={{ fontSize: '0.9rem', color: selectedPlan.color, fontWeight: 600 }}>+${(parseFloat(amount) * selectedPlan.roi / 100).toFixed(2)}</span></div>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 8, display: 'flex', justifyContent: 'space-between' }}><span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Total Return</span><span style={{ fontSize: '1rem', color: '#4ade80', fontWeight: 700 }}>${calcReturn(parseFloat(amount), selectedPlan.roi).toFixed(2)}</span></div>
+              <div style={{ marginTop: 6, fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)' }}>Returns after {selectedPlan.duration} days</div>
+            </div>
+          )}
+          {error && <div style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: 12, padding: '10px', background: 'rgba(248,113,113,0.1)', borderRadius: 8 }}>{error}</div>}
+          <button className="btn-gold" onClick={handleInvest} disabled={submitting||!amount} style={{ width: '100%', opacity: (submitting||!amount)?0.7:1 }}>{submitting ? 'PROCESSING...' : `INVEST $${amount||'0'} IN ${selectedPlan.name}`}</button>
+        </div>
+      )}
+    </div>
+  )
+}
+EOF
+
+echo "✅ Invest page written"
+
+git add . && git commit -m "settings tab, live wallets and plans from db" && git push
+
+echo "🚀 All done! Check Vercel for deployment."
