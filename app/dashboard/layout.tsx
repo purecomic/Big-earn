@@ -9,6 +9,7 @@ import {
   LayoutDashboard, ArrowDownCircle, ArrowUpCircle, TrendingUp,
   ShieldCheck, Bell, LogOut, Menu, X, User
 } from 'lucide-react'
+import DashboardChat from '@/components/DashboardChat'
 
 const navItems = [
   { href: '/dashboard/main', label: 'DASHBOARD', icon: LayoutDashboard },
@@ -255,6 +256,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main style={{ flex: 1, paddingBottom: 80 }}>
         {children}
       </main>
+
+      {/* DASHBOARD CHAT */}
+      <DashboardChat />
 
       {/* BOTTOM NAV */}
       <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(10,15,30,0.98)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(245,200,66,0.12)', display: 'flex', height: 70, zIndex: 30 }}>

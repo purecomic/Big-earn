@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { TrendingUp, Shield, Zap, ChevronRight, Star, ArrowRight, MapPin, Phone, Mail, Globe, Users, Award, Clock, CheckCircle, Quote } from 'lucide-react'
 import { BANNER_IMG } from '@/lib/banner'
+import ChatWidget from '@/components/ChatWidget'
 
 export default function HomePage() {
   const plans = [
@@ -347,6 +348,7 @@ export default function HomePage() {
           ))}
         </div>
       </footer>
+      <ChatWidget />
     </div>
   )
 }
