@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { MessageCircle, X, Send, Minimize2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { BANNER_IMG } from '@/lib/banner'
 import { useAuth } from '@/lib/auth-context'
 
 type Message = {
@@ -93,6 +94,19 @@ export default function ChatWidget() {
       sender: 'user',
       read: false,
     })
+
+    // Auto-reply only on first message
+    if (messages.length === 0) {
+      setTimeout(async () => {
+        await supabase.from('chats').insert({
+          user_id: user.id,
+          message: "Hi! Thanks for reaching out to BIG EARN Support 👋 We're a little busy right now but we'll respond to you as soon as possible. In the meantime, feel free to check our investment plans or visit our FAQ.",
+          sender: 'admin',
+          read: false,
+        })
+      }, 1200)
+    }
+
     setSending(false)
   }
 
@@ -175,7 +189,7 @@ export default function ChatWidget() {
             flexShrink: 0
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#050810', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>👩🏽‍💼</div>
+              <div style={{ width: 34, height: 34, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(0,0,0,0.2)', flexShrink: 0 }}><img src={BANNER_IMG} alt="Support" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'right top' }} /></div>
               <div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', color: '#050810', fontWeight: 700 }}>BIG EARN SUPPORT</div>
                 <div style={{ fontSize: '0.65rem', color: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -237,7 +251,7 @@ export default function ChatWidget() {
                 {messages.map(msg => (
                   <div key={msg.id} style={{ display: 'flex', justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
                     {msg.sender === 'admin' && (
-                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(245,200,66,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', flexShrink: 0, marginRight: 7, alignSelf: 'flex-end' }}>👩🏽‍💼</div>
+                      <div style={{ width: 26, height: 26, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, marginRight: 7, alignSelf: 'flex-end', border: '1px solid rgba(245,200,66,0.3)' }}><img src={BANNER_IMG} alt="Support" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'right top' }} /></div>
                     )}
                     <div style={{
                       maxWidth: '72%', padding: '9px 12px', borderRadius: msg.sender === 'user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { MessageCircle, Send, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { BANNER_IMG } from '@/lib/banner'
 import { useAuth } from '@/lib/auth-context'
 
 type Message = {
@@ -78,6 +79,19 @@ export default function DashboardChat() {
     const text = input.trim()
     setInput('')
     await supabase.from('chats').insert({ user_id: user.id, message: text, sender: 'user', read: false })
+
+    // Auto-reply only on first message
+    if (messages.filter(m => m.sender === 'user').length === 0) {
+      setTimeout(async () => {
+        await supabase.from('chats').insert({
+          user_id: user.id,
+          message: "Hi! Thanks for reaching out to BIG EARN Support 👋 We're a little busy right now but we'll respond to you as soon as possible. In the meantime, feel free to check our investment plans or visit our FAQ.",
+          sender: 'admin',
+          read: false,
+        })
+      }, 1200)
+    }
+
     setSending(false)
   }
 
@@ -101,7 +115,7 @@ export default function DashboardChat() {
         <div style={{ position: 'fixed', bottom: 140, right: 10, left: 10, maxWidth: 400, margin: '0 auto', background: '#0a0f1e', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 18, zIndex: 35, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.7)', display: 'flex', flexDirection: 'column', height: 400 }}>
           {/* Header */}
           <div style={{ background: 'linear-gradient(135deg, #f5c842, #e6b800)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#050810', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}>👩🏽‍💼</div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(0,0,0,0.15)', flexShrink: 0 }}><img src={BANNER_IMG} alt="Support" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'right top' }} /></div>
             <div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', color: '#050810', fontWeight: 700 }}>SUPPORT TEAM</div>
               <div style={{ fontSize: '0.62rem', color: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -131,7 +145,7 @@ export default function DashboardChat() {
             {messages.map(msg => (
               <div key={msg.id} style={{ display: 'flex', justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start', marginBottom: 9 }}>
                 {msg.sender === 'admin' && (
-                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(245,200,66,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', flexShrink: 0, marginRight: 6, alignSelf: 'flex-end' }}>👩🏽‍💼</div>
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, marginRight: 6, alignSelf: 'flex-end', border: '1px solid rgba(245,200,66,0.3)' }}><img src={BANNER_IMG} alt="Support" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'right top' }} /></div>
                 )}
                 <div style={{ maxWidth: '74%', padding: '9px 12px', borderRadius: msg.sender === 'user' ? '13px 13px 3px 13px' : '13px 13px 13px 3px', background: msg.sender === 'user' ? 'linear-gradient(135deg, #f5c842, #e6b800)' : 'rgba(255,255,255,0.07)', color: msg.sender === 'user' ? '#050810' : '#e8eaf0', fontSize: '0.8rem', lineHeight: 1.55 }}>
                   {msg.message}
