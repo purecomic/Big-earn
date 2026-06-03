@@ -185,7 +185,7 @@ export default function AdminChat() {
             <div className="card" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               {/* Thread header */}
               <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button onClick={() => setSelectedUser(null)} style={{ background: 'none', border: 'none', color: '#f5c842', cursor: 'pointer', fontSize: '0.8rem', padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(245,200,66,0.3)' }}>← Back</button>
+                <button onClick={() => setSelectedUser(null)} style={{ background: 'none', border: '1px solid rgba(245,200,66,0.3)', color: '#f5c842', cursor: 'pointer', fontSize: '0.8rem', padding: '4px 8px', borderRadius: 6 }}>← Back</button>
                 <div>
                   <div style={{ fontSize: '0.86rem', fontWeight: 600, color: '#e8eaf0' }}>{selectedUser.full_name}</div>
                   <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.38)' }}>{selectedUser.email}</div>
