@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
+import AdminChat from '@/components/AdminChat'
 import { supabase, Transaction, User } from '@/lib/supabase'
 import { CheckCircle, XCircle, Send, Users, DollarSign, TrendingUp, Bell, RefreshCw, Search, Settings, Save } from 'lucide-react'
 
