@@ -182,6 +182,42 @@ export default function DashboardMain() {
         </div>
       )}
 
+      
+      {/* Referral Section */}
+      <div style={{ marginTop: 24 }}>
+        <div className="card" style={{ padding: '20px' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: '#e8eaf0', marginBottom: 16 }}>🎁 REFERRAL PROGRAM</h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginBottom: 16 }}>
+            Share your link and earn <span style={{ color: '#f5c842', fontWeight: 700 }}>5%</span> of every deposit your referrals make!
+          </p>
+          <div style={{ background: 'rgba(245,200,66,0.08)', border: '1px solid rgba(245,200,66,0.2)', borderRadius: 10, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ color: '#f5c842', fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+              {typeof window !== 'undefined' ? `${window.location.origin}/auth/signup?ref=${user?.referral_code}` : ''}
+            </span>
+            <button
+              onClick={() => {
+                const link = `${window.location.origin}/auth/signup?ref=${user?.referral_code}`
+                navigator.clipboard.writeText(link)
+                alert('Referral link copied!')
+              }}
+              style={{ marginLeft: 12, background: '#f5c842', color: '#0a0a0a', border: 'none', borderRadius: 8, padding: '8px 14px', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            >
+              COPY
+            </button>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 4 }}>YOUR CODE</p>
+              <p style={{ color: '#f5c842', fontWeight: 700, fontSize: '1rem' }}>{user?.referral_code || '...'}</p>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginBottom: 4 }}>REFERRAL EARNINGS</p>
+              <p style={{ color: '#4ade80', fontWeight: 700, fontSize: '1rem' }}>${(user?.referral_earnings ?? 0).toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Recent Transactions */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>

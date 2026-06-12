@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 
@@ -16,6 +16,13 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const { signUp } = useAuth()
+  const searchParams = useSearchParams()
+  const [referralCode, setReferralCode] = useState('')
+
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) setReferralCode(ref)
+  }, [searchParams])
   const router = useRouter()
 
   async function handleSubmit() {
@@ -23,7 +30,7 @@ export default function SignupPage() {
     if (password !== confirm) { setError('Passwords do not match'); return }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return }
     setLoading(true); setError('')
-    const { error } = await signUp(email, password, name)
+    const { error } = await signUp(email, password, name, referralCode)
     if (error) {
       setError(error)
       setLoading(false)

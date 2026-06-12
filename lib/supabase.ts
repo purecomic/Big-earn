@@ -10,6 +10,9 @@ export type User = {
   email: string
   full_name: string
   balance: number
+  referral_code?: string
+  referred_by?: string
+  referral_earnings?: number
   total_invested: number
   total_withdrawn: number
   created_at: string

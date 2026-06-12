@@ -12,7 +12,7 @@ type AuthContextType = {
   loading: boolean
   isAdmin: boolean
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
-  signUp: (email: string, password: string, name: string) => Promise<{ error: string | null }>
+  signUp: (email: string, password: string, name: string, referralCode?: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         full_name: email.split('@')[0],
         balance: 0,
+          referred_by: referrerId,
         total_invested: 0,
         total_withdrawn: 0,
         is_admin: email === ADMIN_EMAIL,
@@ -111,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null }
   }
 
-  async function signUp(email: string, password: string, name: string) {
+  async function signUp(email: string, password: string, name: string, referralCode?: string) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -122,7 +123,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userId = data.user?.id
     if (userId) {
       // Upsert so it works even if the row somehow already exists
-      await supabase.from('profiles').upsert({
+      // Look up referrer if code provided
+    let referrerId = null
+    if (referralCode) {
+      const { data: referrer } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referral_code', referralCode.toUpperCase())
+        .single()
+      if (referrer) referrerId = referrer.id
+    }
+    await supabase.from('profiles').upsert({
         id: userId,
         email,
         full_name: name,
