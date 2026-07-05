@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/lib/auth-context'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 
-export default function SignupPage() {
+function SignupContent() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -116,4 +116,8 @@ export default function SignupPage() {
       </div>
     </div>
   )
+}
+
+export default function SignupPage() {
+  return <Suspense fallback={<div style={{minHeight:'100vh',background:'#050810'}} />}><SignupContent /></Suspense>
 }

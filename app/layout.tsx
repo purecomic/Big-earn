@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: 'BIG EARN — Invest & Grow',
   description: 'The premier crypto investment platform. Earn big, earn smart.',
   manifest: '/manifest.json',
-  themeColor: '#050810',
+
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
