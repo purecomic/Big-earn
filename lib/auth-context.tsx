@@ -48,7 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         full_name: email.split('@')[0],
         balance: 0,
-          referred_by: referrerId,
         total_invested: 0,
         total_withdrawn: 0,
         is_admin: email === ADMIN_EMAIL,
@@ -124,14 +123,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userId) {
       // Upsert so it works even if the row somehow already exists
       // Look up referrer if code provided
-    let referrerId = null
     if (referralCode) {
       const { data: referrer } = await supabase
         .from('profiles')
         .select('id')
         .eq('referral_code', referralCode.toUpperCase())
         .single()
-      if (referrer) referrerId = referrer.id
     }
     await supabase.from('profiles').upsert({
         id: userId,
