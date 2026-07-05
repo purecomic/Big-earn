@@ -379,6 +379,40 @@ export default function AdminPage() {
           )}
 
           {/* SETTINGS */}
+
+          {/* Sent notifications list */}
+          <div className="card" style={{ overflow: 'hidden', marginTop: 16 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'var(--font-display)', color: '#e8eaf0', fontSize: '0.95rem' }}>SENT NOTIFICATIONS</span>
+              <button onClick={fetchNotifications} style={{ background: 'none', border: 'none', color: '#f5c842', cursor: 'pointer', fontSize: '0.75rem' }}>↺ Refresh</button>
+            </div>
+            {loadingNotifs ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>Loading...</div>
+            ) : sentNotifs.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>No notifications sent yet</div>
+            ) : sentNotifs.map((n: any, i: number, arr: any[]) => (
+              <div key={n.id} style={{ padding: '14px 16px', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' as const }}>
+                    <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: 100, background: n.type === 'success' ? 'rgba(74,222,128,0.15)' : n.type === 'warning' ? 'rgba(245,200,66,0.15)' : n.type === 'alert' ? 'rgba(248,113,113,0.15)' : 'rgba(96,165,250,0.15)', color: n.type === 'success' ? '#4ade80' : n.type === 'warning' ? '#f5c842' : n.type === 'alert' ? '#f87171' : '#60a5fa' }}>{n.type}</span>
+                    {n.is_broadcast && <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.07)', padding: '2px 7px', borderRadius: 100 }}>broadcast</span>}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#e8eaf0', marginBottom: 3 }}>{n.title}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.5, marginBottom: 4 }}>{n.message}</div>
+                  <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.28)' }}>
+                    {n.is_broadcast ? '📢 All users' : '👤 Individual'} · {new Date(n.created_at).toLocaleString()}
+                  </div>
+                </div>
+                <button
+                  onClick={() => deleteNotification(n.id)}
+                  disabled={deletingId === n.id}
+                  style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)', borderRadius: 8, padding: '8px 12px', cursor: deletingId === n.id ? 'default' : 'pointer', color: '#f87171', fontSize: '0.78rem', flexShrink: 0, opacity: deletingId === n.id ? 0.5 : 1 }}
+                >
+                  {deletingId === n.id ? '...' : '🗑️ Delete'}
+                </button>
+              </div>
+            ))}
+          </div>
           {tab === 'settings' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {settingsSaved && (
