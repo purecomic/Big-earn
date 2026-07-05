@@ -27,6 +27,9 @@ export default function AdminPage() {
   const [notifTarget, setNotifTarget] = useState<string>('all')
   const [sending, setSending] = useState(false)
   const [notifSuccess, setNotifSuccess] = useState(false)
+  const [sentNotifs, setSentNotifs] = useState<any[]>([])
+  const [loadingNotifs, setLoadingNotifs] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Settings
   const [wallets, setWallets] = useState({ btc: '', usdt: '', eth: '' })
@@ -44,6 +47,24 @@ export default function AdminPage() {
     fetchAll()
     fetchSettings()
   }, [isAdmin])
+
+  async function fetchNotifications() {
+    setLoadingNotifs(true)
+    const { data } = await supabase
+      .from('notifications')
+      .select('*, profiles(full_name, email)')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (data) setSentNotifs(data)
+    setLoadingNotifs(false)
+  }
+
+  async function deleteNotification(id: string) {
+    setDeletingId(id)
+    await supabase.from('notifications').delete().eq('id', id)
+    setSentNotifs(prev => prev.filter((n: any) => n.id !== id))
+    setDeletingId(null)
+  }
 
   async function fetchAll() {
     setLoading(true)
@@ -141,6 +162,7 @@ export default function AdminPage() {
     setNotifSuccess(true)
     setNotifTitle(''); setNotifMessage('')
     setTimeout(() => setNotifSuccess(false), 3000)
+    fetchNotifications()
   }
 
   const pendingDeposits = transactions.filter(t => t.type === 'deposit' && t.status === 'pending')
