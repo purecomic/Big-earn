@@ -55,10 +55,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         table: 'notifications',
       }, (payload) => {
         const n = payload.new as Notification
-        // Only add if it's for this user or broadcast
         if (n.user_id === user.id || n.is_broadcast) {
           setNotifications(prev => [n, ...prev])
         }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'notifications',
+      }, (payload) => {
+        setNotifications(prev => prev.filter(n => n.id !== payload.old.id))
+        setUnread(prev => Math.max(0, prev - 1))
       })
       .subscribe()
 
