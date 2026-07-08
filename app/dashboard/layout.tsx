@@ -27,6 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [notifOpen, setNotifOpen] = useState(false)
+  const [unread, setUnread] = useState(0)
   const [adminUnlock, setAdminUnlock] = useState(false)
   const [adminPassInput, setAdminPassInput] = useState('')
   const [adminPassError, setAdminPassError] = useState(false)
