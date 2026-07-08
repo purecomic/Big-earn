@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context'
 import { supabase, Notification } from '@/lib/supabase'
 import {
   LayoutDashboard, ArrowDownCircle, ArrowUpCircle, TrendingUp,
-  ShieldCheck, Bell, LogOut, Menu, X, User
+  ShieldCheck, Bell, LogOut, Menu, X, User, UserCog
 } from 'lucide-react'
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { href: '/dashboard/deposit', label: 'DEPOSIT', icon: ArrowDownCircle },
   { href: '/dashboard/withdraw', label: 'WITHDRAW', icon: ArrowUpCircle },
   { href: '/dashboard/invest', label: 'INVEST', icon: TrendingUp },
+  { href: '/dashboard/profile', label: 'PROFILE', icon: UserCog },
 ]
 
 const ADMIN_PASSWORD = 'masa234'
