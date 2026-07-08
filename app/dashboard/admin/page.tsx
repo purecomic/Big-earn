@@ -19,6 +19,10 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [editingUser, setEditingUser] = useState<string | null>(null)
+  const [editJoinDate, setEditJoinDate] = useState('')
+  const [savingDate, setSavingDate] = useState(false)
+  const [dateSaved, setDateSaved] = useState(false)
 
   // Notification form
   const [notifTitle, setNotifTitle] = useState('')
@@ -64,6 +68,17 @@ export default function AdminPage() {
     await supabase.from('notifications').delete().eq('id', id)
     setSentNotifs(prev => prev.filter((n: any) => n.id !== id))
     setDeletingId(null)
+  }
+
+  async function updateJoinDate(userId: string) {
+    if (!editJoinDate) return
+    setSavingDate(true)
+    await supabase.from('profiles').update({ created_at: new Date(editJoinDate).toISOString() }).eq('id', userId)
+    setSavingDate(false)
+    setDateSaved(true)
+    setEditingUser(null)
+    setTimeout(() => setDateSaved(false), 2000)
+    fetchAll()
   }
 
   async function fetchAll() {
