@@ -16,11 +16,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <style>{`
+          /* Hide Google Translate top banner */
+          .goog-te-banner-frame { display: none !important; }
+          body { top: 0 !important; }
+          .goog-te-gadget { font-family: var(--font-body) !important; }
+          .goog-te-gadget-simple {
+            background: rgba(245,200,66,0.1) !important;
+            border: 1px solid rgba(245,200,66,0.3) !important;
+            border-radius: 8px !important;
+            padding: 4px 10px !important;
+            cursor: pointer !important;
+          }
+          .goog-te-gadget-simple span { color: #f5c842 !important; }
+          .goog-te-gadget-simple .goog-te-menu-value span { color: #f5c842 !important; }
+          #google_translate_element { display: inline-block; }
+        `}</style>
       </head>
       <body>
         <AuthProvider>
           {children}
         </AuthProvider>
+        <div id="google_translate_element" style={{ position: 'fixed', bottom: 86, left: 16, zIndex: 99 }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function googleTranslateElementInit() {
+                new google.translate.TranslateElement({
+                  pageLanguage: 'en',
+                  autoDisplay: false,
+                  layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+                }, 'google_translate_element');
+              }
+            `
+          }}
+        />
+        <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async />
         <script
           dangerouslySetInnerHTML={{
             __html: `
