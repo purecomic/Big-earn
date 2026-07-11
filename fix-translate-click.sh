@@ -1,4 +1,8 @@
-'use client'
+#!/bin/bash
+cd ~/bigearn-app/bigearn
+
+python3 << 'PYEOF'
+lang_picker = """'use client'
 
 import { useState, useEffect } from 'react'
 
@@ -153,3 +157,65 @@ export default function LanguagePicker() {
     </div>
   )
 }
+"""
+
+with open('components/LanguagePicker.tsx', 'w') as f:
+    f.write(lang_picker)
+print("LanguagePicker updated with cookie-based translation")
+
+# Also update layout to include the googtrans cookie handling
+layout = open('app/layout.tsx').read()
+
+# Update the translate script to handle cookies
+old_script = """        <script dangerouslySetInnerHTML={{ __html: `
+          function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+              pageLanguage: 'en',
+              autoDisplay: false,
+              includedLanguages: 'es,pt,fr,ar,zh-CN,zh-TW,ru,th,hi,bn,ur,tr,de,it,ja,ko,nl,pl,vi,id,ms,sw,ha,yo,ig,am,so,tl,uk,ro,fa,he,el,cs,hu,sv,no,da,fi,sk,hr,bg,lt,lv,et,sl,sr,mk,sq,hy,ka,az,kk,uz,tk,ky,mn,si,ne,my,km,lo,bo,jw,su,ceb,hmn,mg,mt,cy,eu,gl,ca',
+              layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+          }
+
+          function translateTo(lang) {
+            var select = document.querySelector('.goog-te-combo');
+            if (select) {
+              select.value = lang;
+              select.dispatchEvent(new Event('change'));
+            }
+            document.getElementById('lang-picker').style.display = 'none';
+          }
+
+          function toggleLangPicker() {
+            var picker = document.getElementById('lang-picker');
+            picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+          }
+
+          window.translateTo = translateTo;
+          window.toggleLangPicker = toggleLangPicker;
+        `}} />"""
+
+new_script = """        <script dangerouslySetInnerHTML={{ __html: `
+          function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+              pageLanguage: 'en',
+              autoDisplay: true,
+              includedLanguages: 'es,pt,fr,ar,zh-CN,ru,th,hi,bn,ur,tr,de,it,ja,ko,nl,pl,vi,id,ms,sw,ha,yo,ig,am,so,tl,uk,ro,fa,el',
+              layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+          }
+        `}} />"""
+
+if old_script in layout:
+    layout = layout.replace(old_script, new_script)
+    print("Updated translate script")
+else:
+    print("Script not found, keeping as is")
+
+with open('app/layout.tsx', 'w') as f:
+    f.write(layout)
+print("Done!")
+PYEOF
+
+git add . && git commit -m "fix language picker to use cookie method for reliable translation" && git push
+echo "Done!"

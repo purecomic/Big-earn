@@ -34,28 +34,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           function googleTranslateElementInit() {
             new google.translate.TranslateElement({
               pageLanguage: 'en',
-              autoDisplay: false,
-              includedLanguages: 'es,pt,fr,ar,zh-CN,zh-TW,ru,th,hi,bn,ur,tr,de,it,ja,ko,nl,pl,vi,id,ms,sw,ha,yo,ig,am,so,tl,uk,ro,fa,he,el,cs,hu,sv,no,da,fi,sk,hr,bg,lt,lv,et,sl,sr,mk,sq,hy,ka,az,kk,uz,tk,ky,mn,si,ne,my,km,lo,bo,jw,su,ceb,hmn,mg,mt,cy,eu,gl,ca',
+              autoDisplay: true,
+              includedLanguages: 'es,pt,fr,ar,zh-CN,ru,th,hi,bn,ur,tr,de,it,ja,ko,nl,pl,vi,id,ms,sw,ha,yo,ig,am,so,tl,uk,ro,fa,el',
               layout: google.translate.TranslateElement.InlineLayout.SIMPLE
             }, 'google_translate_element');
           }
-
-          function translateTo(lang) {
-            var select = document.querySelector('.goog-te-combo');
-            if (select) {
-              select.value = lang;
-              select.dispatchEvent(new Event('change'));
-            }
-            document.getElementById('lang-picker').style.display = 'none';
-          }
-
-          function toggleLangPicker() {
-            var picker = document.getElementById('lang-picker');
-            picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-          }
-
-          window.translateTo = translateTo;
-          window.toggleLangPicker = toggleLangPicker;
         `}} />
         <script
           dangerouslySetInnerHTML={{
