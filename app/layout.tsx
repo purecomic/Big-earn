@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
+import LanguagePicker from '@/components/LanguagePicker'
 
 export const metadata: Metadata = {
   title: 'BIG EARN — Invest & Grow',
@@ -71,60 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             `
           }}
         />
-      {/* Custom Language Picker */}
-      <div style={{ position: 'fixed', bottom: 82, left: 12, zIndex: 200 }}>
-        <button
-          onClick={() => { const p = document.getElementById('lang-picker'); if(p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }}
-          style={{ background: 'rgba(10,15,30,0.95)', border: '1px solid rgba(245,200,66,0.4)', borderRadius: 10, padding: '8px 14px', color: '#f5c842', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
-        >
-          🌐 <span style={{ fontWeight: 600 }}>Language</span>
-        </button>
-        <div id="lang-picker" style={{ display: 'none', position: 'absolute', bottom: '100%', left: 0, marginBottom: 8, background: '#0a0f1e', border: '1px solid rgba(245,200,66,0.25)', borderRadius: 14, padding: '8px', width: 220, maxHeight: 320, overflowY: 'auto', boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
-          <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', padding: '4px 8px 8px', letterSpacing: '0.08em' }}>SELECT LANGUAGE</div>
-          {[
-            ['en', '🇬🇧 English'],
-            ['es', '🇪🇸 Spanish'],
-            ['pt', '🇧🇷 Portuguese'],
-            ['fr', '🇫🇷 French'],
-            ['ar', '🇸🇦 Arabic'],
-            ['zh-CN', '🇨🇳 Chinese'],
-            ['ru', '🇷🇺 Russian'],
-            ['th', '🇹🇭 Thai'],
-            ['hi', '🇮🇳 Hindi'],
-            ['tr', '🇹🇷 Turkish'],
-            ['de', '🇩🇪 German'],
-            ['it', '🇮🇹 Italian'],
-            ['ja', '🇯🇵 Japanese'],
-            ['ko', '🇰🇷 Korean'],
-            ['nl', '🇳🇱 Dutch'],
-            ['pl', '🇵🇱 Polish'],
-            ['vi', '🇻🇳 Vietnamese'],
-            ['id', '🇮🇩 Indonesian'],
-            ['ms', '🇲🇾 Malay'],
-            ['sw', '🇰🇪 Swahili'],
-            ['ha', '🇳🇬 Hausa'],
-            ['yo', '🇳🇬 Yoruba'],
-            ['ig', '🇳🇬 Igbo'],
-            ['ur', '🇵🇰 Urdu'],
-            ['bn', '🇧🇩 Bengali'],
-            ['fa', '🇮🇷 Persian'],
-            ['uk', '🇺🇦 Ukrainian'],
-            ['ro', '🇷🇴 Romanian'],
-            ['el', '🇬🇷 Greek'],
-            ['tl', '🇵🇭 Filipino'],
-          ].map(([code, label]) => (
-            <button
-              key={code}
-              onClick={() => { const s = document.querySelector('.goog-te-combo') as HTMLSelectElement; if(s){ s.value=code; s.dispatchEvent(new Event('change')); } const p = document.getElementById('lang-picker'); if(p) p.style.display='none'; }}
-              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 12px', background: 'none', border: 'none', color: '#e8eaf0', fontSize: '0.85rem', cursor: 'pointer', borderRadius: 8 }}
-              onMouseOver={e => (e.currentTarget.style.background = 'rgba(245,200,66,0.1)')}
-              onMouseOut={e => (e.currentTarget.style.background = 'none')}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <LanguagePicker />
       </body>
     </html>
   )
