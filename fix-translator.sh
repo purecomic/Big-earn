@@ -1,33 +1,55 @@
-import type { Metadata } from 'next'
-import './globals.css'
-import { AuthProvider } from '@/lib/auth-context'
+#!/bin/bash
+cd ~/bigearn-app/bigearn
 
-export const metadata: Metadata = {
-  title: 'BIG EARN — Invest & Grow',
-  description: 'The premier crypto investment platform. Earn big, earn smart.',
-  manifest: '/manifest.json',
+python3 << 'PYEOF'
+path = 'app/layout.tsx'
+content = open(path).read()
 
-}
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <style>{`
+# Remove old translate code and replace with better version
+# Remove the style block
+content = content.replace(
+    """        <style>{`
+          /* Hide Google Translate top banner */
+          .goog-te-banner-frame { display: none !important; }
+          body { top: 0 !important; }
+          .goog-te-gadget { font-family: var(--font-body) !important; }
+          .goog-te-gadget-simple {
+            background: rgba(245,200,66,0.1) !important;
+            border: 1px solid rgba(245,200,66,0.3) !important;
+            border-radius: 8px !important;
+            padding: 4px 10px !important;
+            cursor: pointer !important;
+          }
+          .goog-te-gadget-simple span { color: #f5c842 !important; }
+          .goog-te-gadget-simple .goog-te-menu-value span { color: #f5c842 !important; }
+          #google_translate_element { display: inline-block; }
+        `}</style>""",
+    """        <style>{`
           .goog-te-banner-frame { display: none !important; }
           .goog-te-ftab-float { display: none !important; }
           body { top: 0 !important; position: static !important; }
           .skiptranslate { display: none !important; }
-        `}</style>
-      </head>
-      <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-        <div id="google_translate_element" style={{ display: 'none' }} />
+        `}</style>"""
+)
+
+# Remove old translate element div and scripts, replace with better ones
+old_translate_block = """        <div id="google_translate_element" style={{ position: 'fixed', bottom: 86, left: 16, zIndex: 99 }} />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function googleTranslateElementInit() {
+                new google.translate.TranslateElement({
+                  pageLanguage: 'en',
+                  autoDisplay: false,
+                  layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+                }, 'google_translate_element');
+              }
+            `
+          }}
+        />
+        <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async />"""
+
+new_translate_block = """        <div id="google_translate_element" style={{ display: 'none' }} />
         <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async />
         <script dangerouslySetInnerHTML={{ __html: `
           function googleTranslateElementInit() {
@@ -55,23 +77,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           window.translateTo = translateTo;
           window.toggleLangPicker = toggleLangPicker;
-        `}} />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              (function(){
-                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-                s1.async=true;
-                s1.src='https://embed.tawk.to/6a212f3e5c37391c2e9a3190/default';
-                s1.charset='UTF-8';
-                s1.setAttribute('crossorigin','*');
-                s0.parentNode.insertBefore(s1,s0);
-              })();
-            `
-          }}
-        />
-      {/* Custom Language Picker */}
+        `}} />"""
+
+if old_translate_block in content:
+    content = content.replace(old_translate_block, new_translate_block)
+    print("Replaced translate block")
+else:
+    print("Could not find old translate block")
+
+# Add custom language picker UI before closing body
+content = content.replace(
+    "      </body>",
+    """      {/* Custom Language Picker */}
       <div style={{ position: 'fixed', bottom: 82, left: 12, zIndex: 200 }}>
         <button
           onClick={() => { const p = document.getElementById('lang-picker'); if(p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }}
@@ -125,7 +142,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           ))}
         </div>
       </div>
-      </body>
-    </html>
-  )
-}
+      </body>"""
+)
+print("Added custom language picker UI")
+
+open(path, 'w').write(content)
+print("Done!")
+PYEOF
+
+git add . && git commit -m "replace Google Translate widget with custom language picker" && git push
+echo "Done!"
