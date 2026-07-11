@@ -147,6 +147,10 @@ export default function AdminPage() {
       }
       await supabase.from('notifications').insert({ user_id: tx.user_id, title: '✅ Deposit Approved', message: `Your deposit of $${tx.amount} has been approved and added to your balance.`, type: 'success', is_broadcast: false, read: false })
     } else if (tx.type === 'withdrawal') {
+      const wProfile = users.find(u => u.id === tx.user_id)
+      if (wProfile) {
+        await supabase.from('profiles').update({ total_withdrawn: (wProfile.total_withdrawn ?? 0) + tx.amount }).eq('id', tx.user_id)
+      }
       await supabase.from('notifications').insert({ user_id: tx.user_id, title: '✅ Withdrawal Approved', message: `Your withdrawal of $${tx.amount} has been approved and is being processed.`, type: 'success', is_broadcast: false, read: false })
     }
     fetchAll()
